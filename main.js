@@ -1,80 +1,78 @@
 title = "Extend";
 
-description = `Hold to extend `;
+description = `Hold to extend`;
 
-characters = [];
+characters = [
+ 
+];
 
 const G = {
 	WIDTH: 100,
-	HEIGHT: 150
+	HEIGHT: 150,
+  MIN_CORD_LENGTH: 10,
+  MAX_CORD_LENGTH: 60,
+  EPSILON: 1,
+  ROTATION_RATE: 0.08
 };
 
 options = {
 
-  isPlayingBgm: false,
-  theme: "dark",
+  seed: 925,
+  isReplayEnabled: true,
+  isPlayingBgm: true,
+  theme: "shapeDark",
   viewSize: {x: G.WIDTH, y: G.HEIGHT}
 };
 
-/** @type {Vector[]} */
 let pins;
-let pinSizes;
 let cord;
-let mainPin;
 let canExtend = true;
-
 let nextPinDist;
 let speed = 0.3;
-const minCordLength = 10;
-const maxCordLength = 60;
 
 function update() {
   if (!ticks) {
-    pins = [vec(50, 5)];
-    pinSizes = [3];
-    mainPin = vec(50,100);
+    pins = [];
     nextPinDist = 5;
-    cord = {angle: 0, length: minCordLength, pin: mainPin};
+    cord = {angle: 0, length: G.MIN_CORD_LENGTH, pin: vec(50,100)};
   }
 
   let scroll = 0.1;
 
-  if(cord.length == minCordLength){
+  if(cord.length == G.MIN_CORD_LENGTH){
     canExtend = true;
   }
-  if(input.isJustReleased || cord.length == maxCordLength){
+  if(input.isJustReleased || cord.length == G.MAX_CORD_LENGTH){
     canExtend = false;
   }
   if (input.isPressed && canExtend) {
-    cord.length += 1;
-    
+    cord.length += 1; 
   } else {
-    cord.length += (minCordLength - cord.length) * 0.05;
-    if(abs(cord.length - minCordLength) < 1){
-      cord.length = minCordLength;
+    cord.length += (G.MIN_CORD_LENGTH - cord.length) * 0.05;
+    if(abs(cord.length - G.MIN_CORD_LENGTH) < G.EPSILON){
+      cord.length = G.MIN_CORD_LENGTH;
     }
-    cord.angle += 0.08;
+    cord.angle += G.ROTATION_RATE;
   }
 
  
   color("red");
-  line(cord.pin, vec(cord.pin).addWithAngle(cord.angle, cord.length));
-
+  line(cord.pin, vec(cord.pin).addWithAngle(cord.angle,cord.length));
   color("yellow");
-  box(mainPin,3);
+  box(cord.pin,3);
 
   color("black")
       remove(pins, (p) => {
-        p.y+= speed;
-        const index = pins.indexOf(p);
-        if (box(p,pinSizes[index]).isColliding.rect.red) {
-          addScore(ceil(cord.pin.distanceTo(p)), p);
-         
-          pinSizes.splice(index,1);
+        p.pos.y+= speed;
+        if (box(p.pos,p.size).isColliding.rect.red) {
+          
+          color("yellow");
+          particle(p.pos);
+          addScore(ceil(cord.pin.distanceTo(p.pos)), p.pos);
           play("coin");
           return true;
         }
-        if(p.y> G.HEIGHT + 2 ){
+        if(p.pos.y > G.HEIGHT + 2 ){
           end();
         }
         return false;
@@ -82,12 +80,8 @@ function update() {
   
   nextPinDist -= scroll;
   while (nextPinDist < 0) {
-    pins.push(vec(rnd(10, 90), -2 - nextPinDist));
-    pinSizes.push(rnd(3,9));
+    pins.push({pos: vec(rnd(10, 90), -2 - nextPinDist), size: rnd(3,9)});
     nextPinDist += rnd(5, 15);
   }
 }
-
-
-
 addEventListener("load", onLoad);
